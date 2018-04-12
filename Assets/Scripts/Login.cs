@@ -49,6 +49,17 @@ public class Login : MonoBehaviour {
         WWW www = new WWW(gameServerURL,form);
         yield return www;
         Debug.Log(www.text);
+        SetMyGameData(www.text);
+    }
+    public void SetMyGameData(string data)
+    {
+       var gameData= JSON.Parse(data);
+
+        Debug.Log(gameData["UserID"]);
+        Debug.Log(gameData["UserNick"]);
+        Debug.Log(gameData["UserGold"]);
+        Debug.Log(gameData["UserCash"]);
+        Debug.Log(gameData["UserScore"]);
     }
 
     public void OpenMarket()
