@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: 308e2170e2a3e1141b4b5d9ac8f666d7
+timeCreated: 1523513960
+licenseType: Free
+TrueTypeFontImporter:
+  serializedVersion: 4
+  fontSize: 250
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: A25-KAMADJAJA
+  fontNames:
+  - A25-KAMADJAJA
+  fallbackFontReferences: []
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
