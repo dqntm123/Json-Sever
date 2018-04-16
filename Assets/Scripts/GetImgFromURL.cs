@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class GetImgFromURL : MonoBehaviour {
 
-    public string url = "http://images.earthcam.com/ec_metros/ourcams/fridays.jpg";
+    public string url = "http://dqntm123.cafe24.com/userpic/cuma.jpg";
 
     void Start ()
     {

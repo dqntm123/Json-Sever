@@ -11,6 +11,7 @@ public class GameManager : MonoBehaviour {
     public UILabel userGold;
     public UILabel userCash;
     public UILabel userScore;
+    public GameObject rankchang;
 
     void Start()
     {
@@ -74,5 +75,9 @@ public class GameManager : MonoBehaviour {
     {
         score -= 100;
         userScore.text = "Score : " + score.ToString("#,###,###0");
+    }
+    public void rankChang()
+    {
+        rankchang.SetActive(true);
     }
 }
