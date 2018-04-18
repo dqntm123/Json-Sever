@@ -4,6 +4,9 @@ using UnityEngine;
 using MiniJSON;
 using SimpleJSON;
 using UnityEngine.SceneManagement;//씬매니저 클래스를 사용하기위한 선언
+using GooglePlayGames;
+using GooglePlayGames.BasicApi;
+using UnityEngine.SocialPlatforms;
 
 public class Login : MonoBehaviour {
 
@@ -12,6 +15,7 @@ public class Login : MonoBehaviour {
     public GameObject loginBTN;//로그인버튼
     public GameObject popUpWindow;//팝업윈도우
     public UILabel popUpWindowText;//팝업윈도우 내 텍스트
+    public UILabel logText;
     void Start()
     {
         if (Application.internetReachability == 0)//만약 어플의 인터넷연결상태가 되어있지않다면..
@@ -80,6 +84,30 @@ public class Login : MonoBehaviour {
     }
     public void LoginBtn()//로그인 버튼이 눌렸을때 StartLogin 코루틴을 호출하기 위한 함수
     {
-        StartCoroutine(StartLogin());
+        //StartCoroutine(StartLogin());
+        StartCoroutine(GoogleLogin());
+    }
+    IEnumerator GoogleLogin()
+    {
+        yield return null;
+#if UNITY_EDITOR
+        Debug.Log("Editor 환경입니다!!!!!!!!");
+#endif
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+        PlayGamesPlatform.Instance.Authenticate((bool success) =>
+        {
+            if (success)
+            {
+                Debug.Log("로그인성공!!");
+                logText.text = "Login thank you" + Social.localUser.id;
+            }
+            else
+            {
+                Debug.Log("로그인실패!!");
+                logText.text = "Login Faild";
+            }
+        });
+#endif
     }
 }
