@@ -13,6 +13,7 @@
 //  See the License for the specific language governing permissions and
 //    limitations under the License.
 // </copyright>
+#if (UNITY_ANDROID || (UNITY_IPHONE && !NO_GPGS))
 
 namespace GooglePlayGames {
     ///
@@ -35,9 +36,9 @@ namespace GooglePlayGames {
         private const string UnescapedWebClientId = "WEB_CLIENTID";
         private const string UnescapedNearbyServiceId = "NEARBY_SERVICE_ID";
 
-        public const string ApplicationId = "635213676663"; // Filled in automatically
-        public const string IosClientId = ""; // Filled in automatically
-        public const string WebClientId = "635213676663-2gpomans4fkc020ps6maebn4ft64c38s.apps.googleusercontent.com"; // Filled in automatically
+        public const string ApplicationId = "317216843205"; // Filled in automatically
+        public const string IosClientId = "__IOS_CLIENTID__"; // Filled in automatically
+        public const string WebClientId = "317216843205-3lch6v2k9ltsq5f596966p4vl1me0pt6.apps.googleusercontent.com"; // Filled in automatically
         public const string NearbyConnectionServiceId = "";
 
         public static bool ApplicationIdInitialized() {
@@ -67,3 +68,4 @@ namespace GooglePlayGames {
         }
     }
 }
+#endif
