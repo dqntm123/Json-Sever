@@ -13,9 +13,8 @@
 //  See the License for the specific language governing permissions and
 //    limitations under the License.
 // </copyright>
-#if (UNITY_ANDROID || (UNITY_IPHONE && !NO_GPGS))
 
-namespace GooglePlayGames.Editor
+namespace GooglePlayGames
 {
     using UnityEngine;
     using UnityEditor;
@@ -25,20 +24,11 @@ namespace GooglePlayGames.Editor
         private string mNearbyServiceId = string.Empty;
 
         [MenuItem("Window/Google Play Games/Setup/Nearby Connections setup...", false, 3)]
-        public static void MenuItemNearbySetup()
+        public static void MenuItemFileGPGSAndroidSetup()
         {
             EditorWindow window = EditorWindow.GetWindow(
                 typeof(NearbyConnectionUI), true, GPGSStrings.NearbyConnections.Title);
             window.minSize = new Vector2(400, 200);
-        }
-
-        [MenuItem("Window/Google Play Games/Setup/Nearby Connections setup...", true)]
-        public static bool EnableNearbyMenuItem() {
-        #if UNITY_ANDROID
-            return true;
-        #else
-            return false;
-        #endif
         }
 
         public void OnEnable()
@@ -97,54 +87,29 @@ namespace GooglePlayGames.Editor
             // check for valid app id
             if (!GPGSUtil.LooksLikeValidServiceId(nearbyServiceId))
             {
-                if (EditorUtility.DisplayDialog(
-                    "Remove Nearby connection permissions?  ",
-                    "The service Id is invalid.  It must follow package naming rules.  " +
-                    "Do you want to remove the AndroidManifest entries for Nearby connections?",
-                    "Yes",
-                    "No"))
-                {
-                    GPGSProjectSettings.Instance.Set(GPGSUtil.SERVICEIDKEY, null);
-                    GPGSProjectSettings.Instance.Save();
-                }
-                else
-                {
-                    return false;
-                }
+                GPGSUtil.Alert(GPGSStrings.Setup.ServiceIdError);
+                return false;
+            }
 
-             }
-             else
-             {
-                 GPGSProjectSettings.Instance.Set(GPGSUtil.SERVICEIDKEY, nearbyServiceId);
-                 GPGSProjectSettings.Instance.Save();
-             }
+            GPGSProjectSettings.Instance.Set(GPGSUtil.SERVICEIDKEY, nearbyServiceId);
+            GPGSProjectSettings.Instance.Save();
 
             if (androidBuild)
             {
                 // create needed directories
                 GPGSUtil.EnsureDirExists("Assets/Plugins");
                 GPGSUtil.EnsureDirExists("Assets/Plugins/Android");
+                GPGSUtil.CopySupportLibs();
 
                 // Generate AndroidManifest.xml
-                GPGSUtil.GenerateAndroidManifest();
+                GPGSUtil.GenerateAndroidManifest(false);
 
-                GPGSProjectSettings.Instance.Set(GPGSUtil.NEARBYSETUPDONEKEY, true);
-                GPGSProjectSettings.Instance.Save();
-
-                // Resolve the dependencies
-                Google.VersionHandler.VerboseLoggingEnabled = true;
-                Google.VersionHandler.UpdateVersionedAssets(forceUpdate: true);
-                Google.VersionHandler.Enabled = true;
+                // refresh assets, and we're done
                 AssetDatabase.Refresh();
-
-                Google.VersionHandler.InvokeStaticMethod(
-                    Google.VersionHandler.FindClass(
-                   "Google.JarResolver",
-                   "GooglePlayServices.PlayServicesResolver"),
-                   "MenuResolve", null);
+                GPGSProjectSettings.Instance.Set("android.NearbySetupDone", true);
+                GPGSProjectSettings.Instance.Save();
             }
             return true;
         }
     }
 }
-#endif

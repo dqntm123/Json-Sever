@@ -16,6 +16,8 @@
 
 namespace GooglePlayGames.BasicApi.Events
 {
+    using System;
+    using GooglePlayGames.OurUtils;
 
     public enum EventVisibility
     {

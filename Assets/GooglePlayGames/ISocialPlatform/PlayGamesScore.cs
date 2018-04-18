@@ -13,7 +13,6 @@
 //  See the License for the specific language governing permissions and
 //    limitations under the License.
 // </copyright>
-#if (UNITY_ANDROID || (UNITY_IPHONE && !NO_GPGS))
 
 namespace GooglePlayGames
 {
@@ -133,20 +132,5 @@ namespace GooglePlayGames
                 return (int)mRank;
             }
         }
-
-        /// <summary>
-        /// Gets the metaData (scoreTag).
-        /// </summary>
-        /// <returns>
-        /// The metaData.
-        /// </returns>
-        public string metaData
-        {
-            get 
-            {
-                return mMetadata;
-            }
-        }
     }
 }
-#endif

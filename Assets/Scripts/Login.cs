@@ -26,8 +26,8 @@ public class Login : MonoBehaviour {
         }
         else//인터넷이 연결이 되어 있다면...
         {
-            PlayGamesClientConfiguration config = new PlayGamesClientConfiguration.Builder().Build();
-            PlayGamesPlatform.InitializeInstance(config);
+            //PlayGamesClientConfiguration config = new PlayGamesClientConfiguration.Builder().Build();
+            //PlayGamesPlatform.InitializeInstance(config);
             PlayGamesPlatform.Activate();
             StartCoroutine(VerCheck());//버젼체크의 코루틴 호출
         }

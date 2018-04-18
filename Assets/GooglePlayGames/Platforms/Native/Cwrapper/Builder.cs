@@ -115,11 +115,6 @@ namespace GooglePlayGames.Native.Cwrapper
          /* from(void *) */IntPtr callback_arg);
 
         [DllImport(SymbolLocation.NativeSymbolLocation)]
-        internal static extern void GameServices_Builder_SetShowConnectingPopup(
-            HandleRef self,
-            /* from(bool) */ bool flag);
-
-        [DllImport(SymbolLocation.NativeSymbolLocation)]
         internal static extern /* from(GameServices_t) */ IntPtr GameServices_Builder_Create(
             HandleRef self,
          /* from(PlatformConfiguration_t) */IntPtr platform);

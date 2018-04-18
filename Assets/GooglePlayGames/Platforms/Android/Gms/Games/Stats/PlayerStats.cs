@@ -32,9 +32,6 @@ namespace Com.Google.Android.Gms.Games.Stats
         int getNumberOfSessions();
         float getSessionPercentile();
         float getSpendPercentile();
-        float getSpendProbability();
-        float getHighSpenderProbability();
-        float getTotalSpendNext28Days();
     }
 }
 //

@@ -14,8 +14,7 @@
 //    limitations under the License.
 // </copyright>
 
-
-namespace GooglePlayGames.Editor
+namespace GooglePlayGames
 {
     using System;
     using System.Collections;
@@ -65,15 +64,6 @@ namespace GooglePlayGames.Editor
             window.minSize = new Vector2(500, 400);
         }
 
-        [MenuItem("Window/Google Play Games/Setup/Android setup...", true)]
-        public static bool EnableAndroidMenuItem() {
-#if UNITY_ANDROID
-            return true;
-#else
-            return false;
-#endif
-        }
-
         /// <summary>
         /// Performs setup using the Android resources downloaded XML file
         /// from the play console.
@@ -84,9 +74,8 @@ namespace GooglePlayGames.Editor
         /// <param name="className">Fully qualified class name for the resource Ids.</param>
         /// <param name="resourceXmlData">Resource xml data.</param>
         /// <param name="nearbySvcId">Nearby svc identifier.</param>
-        /// <param name="requiresGooglePlus">Indicates this app requires G+</param>
         public static bool PerformSetup(
-            string clientId,
+            string clientId, 
             string classDirectory,
             string className,
             string resourceXmlData,
@@ -106,21 +95,6 @@ namespace GooglePlayGames.Editor
                 GPGSProjectSettings.Instance.Set(GPGSUtil.CLASSDIRECTORYKEY, classDirectory);
                 GPGSProjectSettings.Instance.Set(GPGSUtil.CLASSNAMEKEY, className);
                 GPGSProjectSettings.Instance.Set(GPGSUtil.ANDROIDRESOURCEKEY, resourceXmlData);
-
-                // check the bundle id and set it if needed.
-                CheckBundleId();
-
-                Google.VersionHandler.VerboseLoggingEnabled = true;
-                Google.VersionHandler.UpdateVersionedAssets(forceUpdate: true);
-                Google.VersionHandler.Enabled = true;
-                AssetDatabase.Refresh();
-
-                Google.VersionHandler.InvokeStaticMethod(
-                    Google.VersionHandler.FindClass(
-                   "Google.JarResolver",
-                   "GooglePlayServices.PlayServicesResolver"),
-                   "MenuResolve", null);
-
                 return PerformSetup(
                     clientId,
                     GPGSProjectSettings.Instance.Get(GPGSUtil.APPIDKEY),
@@ -137,10 +111,11 @@ namespace GooglePlayGames.Editor
         /// needed if the ID Token or access token are needed.</param>
         /// <param name="appId">App identifier.</param>
         /// <param name="nearbySvcId">Optional nearby connection serviceId</param>
-        /// <param name="requiresGooglePlus">Indicates that GooglePlus should be enabled</param>
         /// <returns>true if successful</returns>
         public static bool PerformSetup(string webClientId, string appId, string nearbySvcId)
         {
+            bool needTokenPermissions = false;
+
             if (!string.IsNullOrEmpty(webClientId))
             {
                 if (!GPGSUtil.LooksLikeValidClientId(webClientId))
@@ -155,6 +130,12 @@ namespace GooglePlayGames.Editor
                     GPGSUtil.Alert(GPGSStrings.Setup.AppIdMismatch);
                     return false;
                 }
+
+                needTokenPermissions = true;
+            }
+            else
+            {
+                needTokenPermissions = false;
             }
 
             // check for valid app id
@@ -164,13 +145,12 @@ namespace GooglePlayGames.Editor
                 return false;
             }
 
-            if (nearbySvcId != null) {
-#if UNITY_ANDROID
+            if (nearbySvcId != null)
+            {
                 if (!NearbyConnectionUI.PerformSetup(nearbySvcId, true))
                 {
                     return false;
                 }
-#endif
             }
 
             GPGSProjectSettings.Instance.Set(GPGSUtil.APPIDKEY, appId);
@@ -189,8 +169,10 @@ namespace GooglePlayGames.Editor
                 return false;
             }
 
+            GPGSUtil.CopySupportLibs();
+
             // Generate AndroidManifest.xml
-            GPGSUtil.GenerateAndroidManifest();
+            GPGSUtil.GenerateAndroidManifest(needTokenPermissions);
 
             // refresh assets, and we're done
             AssetDatabase.Refresh();
@@ -205,11 +187,10 @@ namespace GooglePlayGames.Editor
         /// </summary>
         public void OnEnable()
         {
-            GPGSProjectSettings settings = GPGSProjectSettings.Instance;
-            mConstantDirectory = settings.Get(GPGSUtil.CLASSDIRECTORYKEY, mConstantDirectory);
-            mClassName = settings.Get(GPGSUtil.CLASSNAMEKEY, mClassName);
-            mConfigData = settings.Get(GPGSUtil.ANDROIDRESOURCEKEY);
-            mWebClientId = settings.Get(GPGSUtil.WEBCLIENTIDKEY);
+            mConstantDirectory = GPGSProjectSettings.Instance.Get("ConstDir", mConstantDirectory);
+            mClassName = GPGSProjectSettings.Instance.Get(GPGSUtil.CLASSNAMEKEY);
+            mConfigData = GPGSProjectSettings.Instance.Get(GPGSUtil.ANDROIDRESOURCEKEY);
+            mWebClientId = GPGSProjectSettings.Instance.Get(GPGSUtil.WEBCLIENTIDKEY);
         }
 
         /// <summary>
@@ -221,8 +202,8 @@ namespace GooglePlayGames.Editor
             GUILayout.BeginVertical();
 
             GUIStyle link = new GUIStyle(GUI.skin.label);
-            link.normal.textColor = new Color(0f, 0f, 1f);
-
+            link.normal.textColor = new Color(.7f, .7f, 1f);
+           
             GUILayout.Space(10);
             GUILayout.Label(GPGSStrings.AndroidSetup.Blurb);
             if (GUILayout.Button("Open Play Games Console", link, GUILayout.ExpandWidth(false)))
@@ -247,7 +228,7 @@ namespace GooglePlayGames.Editor
                 "Directory to save constants",
                 mConstantDirectory,
                 GUILayout.Width(480));
-
+            
             mClassName = EditorGUILayout.TextField(
                 "Constants class name",
                 mClassName,
@@ -287,7 +268,6 @@ namespace GooglePlayGames.Editor
                     if (GPGSUtil.LooksLikeValidPackageName(mClassName))
                     {
                         DoSetup();
-                        return;
                     }
                 }
                 catch (Exception e)
@@ -300,7 +280,7 @@ namespace GooglePlayGames.Editor
 
             if (GUILayout.Button("Cancel", GUILayout.Width(100)))
             {
-                Close();
+                this.Close();
             }
 
             GUILayout.FlexibleSpace();
@@ -316,15 +296,47 @@ namespace GooglePlayGames.Editor
         {
             if (PerformSetup(mWebClientId, mConstantDirectory, mClassName, mConfigData, null))
             {
-                CheckBundleId();
+                // Check the package id.  If one is set the gpgs properties,
+                // and the player settings are the default or empty, set it.
+                // if the player settings is not the default, then prompt before
+                // overwriting.
+                string packageName = GPGSProjectSettings.Instance.Get(
+                                         GPGSUtil.ANDROIDBUNDLEIDKEY, string.Empty);
+                string currentId = PlayerSettings.applicationIdentifier;
+                if (!string.IsNullOrEmpty(packageName))
+                {
+                    if (string.IsNullOrEmpty(currentId) ||
+                        currentId == "com.Company.ProductName")
+                    {
+                        PlayerSettings.applicationIdentifier = packageName;
+                    }
+                    else if (currentId != packageName)
+                    {
+                        if (EditorUtility.DisplayDialog(
+                                "Set Bundle Identifier?",
+                                "The server configuration is using " +
+                                packageName + ", but the player settings is set to " +
+                                currentId + ".\nSet the Bundle Identifier to " +
+                                packageName + "?",
+                                "OK",
+                                "Cancel"))
+                        {
+                            PlayerSettings.applicationIdentifier = packageName;
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.Log("NULL package!!");
+                }
 
                 EditorUtility.DisplayDialog(
                     GPGSStrings.Success,
                     GPGSStrings.AndroidSetup.SetupComplete,
                     GPGSStrings.Ok);
-
+                
                 GPGSProjectSettings.Instance.Set(GPGSUtil.ANDROIDSETUPDONEKEY, true);
-                Close();
+                this.Close();
             }
             else
             {
@@ -336,65 +348,7 @@ namespace GooglePlayGames.Editor
         }
 
         /// <summary>
-        /// Checks the bundle identifier.
-        /// </summary>
-        /// <remarks>
-        /// Check the package id.  If one is set the gpgs properties,
-        /// and the player settings are the default or empty, set it.
-        /// if the player settings is not the default, then prompt before
-        /// overwriting.
-        /// </remarks>
-        public static void CheckBundleId()
-        {
-            string packageName = GPGSProjectSettings.Instance.Get(
-                GPGSUtil.ANDROIDBUNDLEIDKEY, string.Empty);
-            string currentId;
-#if UNITY_5_6_OR_NEWER
-            currentId = PlayerSettings.GetApplicationIdentifier(
-                BuildTargetGroup.Android);
-#else
-            currentId = PlayerSettings.bundleIdentifier;
-#endif
-            if (!string.IsNullOrEmpty(packageName))
-            {
-                if (string.IsNullOrEmpty(currentId) ||
-                    currentId == "com.Company.ProductName")
-                {
-#if UNITY_5_6_OR_NEWER
-                    PlayerSettings.SetApplicationIdentifier(
-                        BuildTargetGroup.Android, packageName);
-#else
-                    PlayerSettings.bundleIdentifier = packageName;
-#endif
-                }
-                else if (currentId != packageName)
-                {
-                    if (EditorUtility.DisplayDialog(
-                        "Set Bundle Identifier?",
-                        "The server configuration is using " +
-                        packageName + ", but the player settings is set to " +
-                        currentId + ".\nSet the Bundle Identifier to " +
-                        packageName + "?",
-                        "OK",
-                        "Cancel"))
-                    {
-#if UNITY_5_6_OR_NEWER
-                        PlayerSettings.SetApplicationIdentifier(
-                            BuildTargetGroup.Android, packageName);
-#else
-                        PlayerSettings.bundleIdentifier = packageName;
-#endif
-                    }
-                }
-            }
-            else
-            {
-                Debug.Log("NULL package!!");
-            }
-        }
-
-        /// <summary>
-        /// Parses the resources xml and set the properties.  Also generates the
+        /// Parses the resources xml and set the properties.  Also generates the 
         /// constants file.
         /// </summary>
         /// <returns><c>true</c>, if resources was parsed, <c>false</c> otherwise.</returns>

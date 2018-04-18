@@ -36,8 +36,7 @@ namespace GooglePlayGames.Native.PInvoke
         private GameServicesBuilder(IntPtr selfPointer)
             : base(selfPointer)
         {
-            InternalHooks.InternalHooks_ConfigureForUnityPlugin(SelfPtr(),
-                    PluginVersion.VersionString);
+            InternalHooks.InternalHooks_ConfigureForUnityPlugin(SelfPtr());
         }
 
         internal void SetOnAuthFinishedCallback(AuthFinishedCallback callback)
@@ -50,7 +49,7 @@ namespace GooglePlayGames.Native.PInvoke
         {
             C.GameServices_Builder_EnableSnapshots(SelfPtr());
         }
-
+        
         internal void AddOauthScope(string scope)
         {
             C.GameServices_Builder_AddOauthScope(SelfPtr(), scope);
@@ -104,11 +103,6 @@ namespace GooglePlayGames.Native.PInvoke
                 Logger.e("Error encountered executing InternalAuthStartedCallback. " +
                     "Smothering to avoid passing exception into Native: " + e);
             }
-        }
-
-        internal void SetShowConnectingPopup(bool flag)
-        {
-            C.GameServices_Builder_SetShowConnectingPopup(SelfPtr(), flag);
         }
 
         protected override void CallDispose(HandleRef selfPointer)
@@ -198,8 +192,7 @@ namespace GooglePlayGames.Native.PInvoke
 
         internal static GameServicesBuilder Create()
         {
-            IntPtr b = C.GameServices_Builder_Construct();
-            return new GameServicesBuilder(b);
+            return new GameServicesBuilder(C.GameServices_Builder_Construct());
         }
     }
 }

@@ -18,14 +18,15 @@
 namespace GooglePlayGames.Android
 {
     using System;
-    using Com.Google.Android.Gms.Common.Api;
-    using Com.Google.Android.Gms.Games.Stats;
-    using Com.Google.Android.Gms.Games;
     using UnityEngine;
     using GooglePlayGames.BasicApi;
     using GooglePlayGames.OurUtils;
+    using Com.Google.Android.Gms.Common.Api;
+    using Com.Google.Android.Gms.Games.Stats;
+    using Com.Google.Android.Gms.Games;
     using C = GooglePlayGames.Native.Cwrapper.InternalHooks;
     using GooglePlayGames.Native.PInvoke;
+
 
     internal class AndroidClient : IClientImpl
     {
@@ -35,9 +36,8 @@ namespace GooglePlayGames.Android
             "(Landroid/app/Activity;Landroid/content/Intent;)V";
 
         private TokenClient tokenClient;
-        private static AndroidJavaObject invisible;
 
-        public PlatformConfiguration CreatePlatformConfiguration(PlayGamesClientConfiguration clientConfig)
+        public PlatformConfiguration CreatePlatformConfiguration()
         {
             var config = AndroidPlatformConfiguration.Create();
             using (var activity = AndroidTokenClient.GetActivity())
@@ -65,40 +65,19 @@ namespace GooglePlayGames.Android
                                 }
                             });
                     });
-                if (clientConfig.IsHidingPopups)
-                {
-                    config.SetOptionalViewForPopups(CreateHiddenView(activity.GetRawObject()));
-                }
             }
+
             return config;
         }
 
 
         public TokenClient CreateTokenClient(bool reset)
         {
-            if (tokenClient == null)
+            if (tokenClient == null || reset)
             {
                 tokenClient = new AndroidTokenClient();
             }
-            else if (reset)
-            {
-                tokenClient.Signout();
-            }
-
             return tokenClient;
-        }
-
-        private IntPtr CreateHiddenView(IntPtr activity)
-        {
-            // Keep it static so it will always be referenced.
-            if (invisible == null || invisible.GetRawObject() == IntPtr.Zero) {
-              invisible = new AndroidJavaObject("android.view.View", activity);
-              invisible.Call("setVisibility",/*View.INVISIBLE*/(int)0x00000004);
-              invisible.Call("setClickable", false);
-            }
-
-            return invisible.GetRawObject();
-            
         }
 
 
@@ -136,17 +115,8 @@ namespace GooglePlayGames.Android
             }
         }
 
-        public void Signout()
-        {
-            if (tokenClient != null)
-            {
-                tokenClient.Signout();
-            }
-        }
-
-        public void GetPlayerStats(IntPtr apiClient,
-                                    Action<CommonStatusCodes,
-                                    GooglePlayGames.BasicApi.PlayerStats> callback)
+        public void GetPlayerStats(IntPtr apiClient, Action<CommonStatusCodes,
+            PlayGamesLocalUser.PlayerStats> callback)
         {
             GoogleApiClient client = new GoogleApiClient(apiClient);
             StatsResultCallback resCallback;
@@ -154,25 +124,22 @@ namespace GooglePlayGames.Android
             try
             {
                 resCallback = new StatsResultCallback((result, stats) =>
+                    {
+                        Debug.Log("Result for getStats: " + result);
+                        PlayGamesLocalUser.PlayerStats s = null;
+                        if (stats != null)
                         {
-                            Debug.Log("Result for getStats: " + result);
-                            GooglePlayGames.BasicApi.PlayerStats s = null;
-                            if (stats != null)
-                            {
-                                s = new GooglePlayGames.BasicApi.PlayerStats();
-                                s.AvgSessonLength = stats.getAverageSessionLength();
-                                s.DaysSinceLastPlayed = stats.getDaysSinceLastPlayed();
-                                s.NumberOfPurchases = stats.getNumberOfPurchases();
-                                s.NumberOfSessions = stats.getNumberOfSessions();
-                                s.SessPercentile = stats.getSessionPercentile();
-                                s.SpendPercentile = stats.getSpendPercentile();
-                                s.ChurnProbability = stats.getChurnProbability();
-                                s.SpendProbability = stats.getSpendProbability();
-                                s.HighSpenderProbability = stats.getHighSpenderProbability();
-                                s.TotalSpendNext28Days = stats.getTotalSpendNext28Days();
-                            }
-                            callback((CommonStatusCodes)result, s);
-                         });
+                            s = new PlayGamesLocalUser.PlayerStats();
+                            s.AvgSessonLength = stats.getAverageSessionLength();
+                            s.DaysSinceLastPlayed = stats.getDaysSinceLastPlayed();
+                            s.NumberOfPurchases = stats.getNumberOfPurchases();
+                            s.NumOfSessions = stats.getNumberOfSessions();
+                            s.SessPercentile = stats.getSessionPercentile();
+                            s.SpendPercentile = stats.getSpendPercentile();
+                            s.ChurnProbability = stats.getChurnProbability();
+                        }
+                        callback((CommonStatusCodes)result, s);
+                    });
             }
             catch (Exception e)
             {
@@ -182,21 +149,16 @@ namespace GooglePlayGames.Android
             }
 
             PendingResult<Stats_LoadPlayerStatsResultObject> pr =
-                    Games.Stats.loadPlayerStats(client, true);
+                Games.Stats.loadPlayerStats(client, true);
 
             pr.setResultCallback(resCallback);
         }
 
-        public void SetGravityForPopups(IntPtr apiClient, Gravity gravity) {
-            GoogleApiClient client = new GoogleApiClient(apiClient);
-            Games.setGravityForPopups(client, (int)gravity | (int)Gravity.CENTER_HORIZONTAL);
-        }
-
         class StatsResultCallback : ResultCallbackProxy<Stats_LoadPlayerStatsResultObject>
         {
-            private Action<int, Com.Google.Android.Gms.Games.Stats.PlayerStats> callback;
+            private Action<int, PlayerStats> callback;
 
-            public StatsResultCallback(Action<int, Com.Google.Android.Gms.Games.Stats.PlayerStats> callback)
+            public StatsResultCallback(Action<int, PlayerStats> callback)
             {
                 this.callback = callback;
             }

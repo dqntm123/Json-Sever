@@ -14,8 +14,11 @@
 //    limitations under the License.
 // </copyright>
 
+using UnityEngine;
+
 // Android only feature
 #if (UNITY_ANDROID)
+
 
 namespace GooglePlayGames.Native.PInvoke
 {
@@ -26,7 +29,6 @@ namespace GooglePlayGames.Native.PInvoke
     using C = GooglePlayGames.Native.Cwrapper.NearbyConnections;
     using N = GooglePlayGames.Native.Cwrapper.NearbyConnectionTypes;
     using Types = GooglePlayGames.Native.Cwrapper.Types;
-    using UnityEngine;
 
     internal class NearbyConnectionsManager : BaseReferenceHolder
     {
@@ -158,6 +160,18 @@ namespace GooglePlayGames.Native.PInvoke
         internal void Shutdown()
         {
             C.NearbyConnections_Stop(SelfPtr());
+        }
+
+        internal string LocalEndpointId()
+        {
+            return PInvokeUtilities.OutParamsToString((out_arg, out_size) =>
+            C.NearbyConnections_GetLocalEndpointId(SelfPtr(), out_arg, out_size));
+        }
+
+        internal string LocalDeviceId()
+        {
+            return PInvokeUtilities.OutParamsToString((out_arg, out_size) =>
+            C.NearbyConnections_GetLocalDeviceId(SelfPtr(), out_arg, out_size));
         }
 
         public string AppBundleId

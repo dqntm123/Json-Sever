@@ -32,11 +32,6 @@ namespace GooglePlayGames.OurUtils
         // queue of actions to run on the game thread
         private static List<System.Action> sQueue = new List<Action>();
 
-        // member variable used to copy actions from the sQueue and
-        // execute them on the game thread.  It is a member variable
-        // to help minimize memory allocations.
-        List<System.Action> localQueue = new List<System.Action>();
-
         // flag that alerts us that we should check the queue
         // (we do this just so we don't have to lock() the queue every
         // frame to check if it's empty or not).
@@ -45,7 +40,7 @@ namespace GooglePlayGames.OurUtils
         // callback for application pause and focus events
         private static List<Action<bool>> sPauseCallbackList =
             new List<Action<bool>>();
-
+        
         private static List<Action<bool>> sFocusCallbackList =
             new List<Action<bool>>();
 
@@ -118,22 +113,17 @@ namespace GooglePlayGames.OurUtils
                 return;
             }
             // first copy the shared queue into a local queue
-            localQueue.Clear();
+            List<System.Action> q = new List<System.Action>();
             lock (sQueue)
             {
                 // transfer the whole queue to our local queue
-                localQueue.AddRange(sQueue);
+                q.AddRange(sQueue);
                 sQueue.Clear();
                 sQueueEmpty = true;
             }
 
             // execute queued actions (from local queue)
-            // use a loop to avoid extra memory allocations using the
-            // forEach
-            for (int i = 0; i < localQueue.Count; i++)
-            {
-                localQueue[i].Invoke();
-            }
+            q.ForEach(a => a.Invoke());
         }
 
         public void OnApplicationFocus(bool focused)

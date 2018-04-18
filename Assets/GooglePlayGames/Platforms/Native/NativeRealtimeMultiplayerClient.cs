@@ -49,7 +49,7 @@ namespace GooglePlayGames.Native
         private RoomSession GetTerminatedSession()
         {
             var terminatedRoom = new RoomSession(mRealtimeManager, new NoopListener());
-            terminatedRoom.EnterState(new ShutdownState(terminatedRoom), false);
+            terminatedRoom.EnterState(new ShutdownState(terminatedRoom));
             return terminatedRoom;
         }
 
@@ -461,7 +461,8 @@ namespace GooglePlayGames.Native
             {
                 mManager = Misc.CheckNotNull(manager);
                 mListener = new OnGameThreadForwardingListener(listener);
-                EnterState(new BeforeRoomCreateStartedState(this), false);
+
+                EnterState(new BeforeRoomCreateStartedState(this));
                 mStillPreRoomCreation = true;
             }
 
@@ -519,35 +520,19 @@ namespace GooglePlayGames.Native
                 return mListener;
             }
 
-            /// <summary>
-            /// Enters the state firing on the OnStateEntered event.
-            /// </summary>
-            /// <param name="handler">Handler for the state.</param>
-            internal void EnterState(State handler)
-            {
-                EnterState(handler, true);
-            }
+            /**
+         * Lifecycle methods - these might cause state transitions, and thus require us to hold a
+         * lock while they're executing to prevent any externally visible inconsistent state (e.g.
+         * receiving any callbacks after we've left a room).
+         */
 
-            /// <summary>
-            /// Sets the state of the session to the given state.
-            /// </summary>
-            /// <remarks>
-            /// Lifecycle methods - these might cause state transitions, and thus require us to hold a
-            /// lock while they're executing to prevent any externally visible inconsistent state (e.g.
-            /// receiving any callbacks after we've left a room).
-            /// </remarks>
-            /// <param name="handler">Handler - the State Handler.</param>
-            /// <param name="fireStateEnteredEvent">If set to <c>true</c> fire the StateEntered event.</param>
-            internal void EnterState(State handler, bool fireStateEnteredEvent)
+            internal void EnterState(State handler)
             {
                 lock (mLifecycleLock)
                 {
                     mState = Misc.CheckNotNull(handler);
-                    if (fireStateEnteredEvent)
-                    {
-                        Logger.d("Entering state: " + handler.GetType().Name);
-                        mState.OnStateEntered();
-                    }
+                    Logger.d("Entering state: " + handler.GetType().Name);
+                    mState.OnStateEntered();
                 }
             }
 
