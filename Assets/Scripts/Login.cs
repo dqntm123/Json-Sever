@@ -68,26 +68,22 @@ public class Login : MonoBehaviour {
         PlayerPrefs.SetInt("UserGold", int.Parse(gameData["UserGold"]));//JSON 내에 UserGold란 key를 가진 value를 int로 변환하여 저장
         PlayerPrefs.SetInt("UserCash", int.Parse(gameData["UserCash"]));//JSON 내에 UserCash란 key를 가진 value를 int로 변환하여 저장
         PlayerPrefs.SetInt("UserScore", int.Parse(gameData["UserScore"]));//JSON 내에 UserScore란 key를 가진 value를 int로 변환하여 저장
-
-        //user[0].GetComponent<UILabel>().text = "ID   " + int.Parse(gameData["UserID"]).ToString();
-        //user[1].GetComponent<UILabel>().text = "Name  " + gameData["UserNick"].ToString();
-        //user[2].GetComponent<UILabel>().text = "Gold  " + int.Parse(gameData["UserGold"]).ToString();
-        //user[3].GetComponent<UILabel>().text = "Cash  " + int.Parse(gameData["UserCash"]).ToString();
-        //user[4].GetComponent<UILabel>().text = "Score  " + int.Parse(gameData["UserScore"]).ToString();
         //Debug.Log(gameData["UserID"].GetType());
         //Debug.Log(gameData["UserNick"].GetType());
         //Debug.Log(gameData["UserGold"].GetType());
         //Debug.Log(gameData["UserCash"].GetType());
         //Debug.Log(gameData["UserScore"].GetType());
+#if UNITY_ANDROID && !UNITY_EDITOR
+        PlayerPrefs.SetString("Google", Social.localUser.id);
+#endif
     }
 
     public void OpenMarket()//마켓링크를 열기위한 함수
     {
-        Application.OpenURL("https://play.google.com/store/apps/details?id=com.zabob.infinitydungeon2");
+        Application.OpenURL("https://play.google.com/apps/internaltest/4701756851857681755");
     }
     public void LoginBtn()//로그인 버튼이 눌렸을때 StartLogin 코루틴을 호출하기 위한 함수
     {
-        //StartCoroutine(StartLogin());
         StartCoroutine(GoogleLogin());
     }
     IEnumerator GoogleLogin()
@@ -95,6 +91,7 @@ public class Login : MonoBehaviour {
         yield return null;
 #if UNITY_EDITOR
         Debug.Log("Editor 환경입니다!!!!!!!!");
+        StartCoroutine(StartLogin());
 #endif
 
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -104,6 +101,7 @@ public class Login : MonoBehaviour {
             {
                 Debug.Log("로그인성공!!");
                 logText.text = "Login thank you" + Social.localUser.id;
+                StartCoroutine(StartLogin());
             }
             else
             {

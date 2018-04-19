@@ -5,7 +5,7 @@ using UnityEngine;
 public class UpdateUserData : MonoBehaviour {
 
     public GameManager gameManager;
-    public string updateURL = "http://dqntm123.cafe24.com/gameserver/updateuser.php";
+    public string updateURL = "http://dqntm123.cafe24.com/gameserver/updateuser22.php";
     
     public void UpdateToServer()//UpdateCorutine 코루틴을 호출하기위한 함수
     {
@@ -17,6 +17,9 @@ public class UpdateUserData : MonoBehaviour {
         WWWForm form = new WWWForm();//클라이언트 데이터를 보내기위한 새로운 폼(WWWForm) 생성
         form.AddField("UserID", PlayerPrefs.GetInt("UserID"));//생성된 form에다 UserID에 key,클라이언트에 저장된 UserID에 value를 필드에 추가
         form.AddField("UserNick", PlayerPrefs.GetString("UserNick"));////생성된 form에다 UserNick에 key,클라이언트에 저장된 UserNick에 value를 필드에 추가
+#if UNITY_ANDROID && !UNITY_EDITOR
+         form.AddField("Google", PlayerPrefs.GetString("Google"));
+#endif
         form.AddField("UserGold",gameManager.gold);////생성된 form에다 UserGold에 key,클라이언트에 저장된 UserGold에 value를 필드에 추가
         form.AddField("UserCash",gameManager.cash);////생성된 form에다 UserCash에 key,클라이언트에 저장된 UserCash에 value를 필드에 추가
         form.AddField("UserScore",gameManager.score);////생성된 form에다 UserScore에 key,클라이언트에 저장된 UserScore에 value를 필드에 추가
